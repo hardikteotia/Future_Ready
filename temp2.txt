@@ -1,0 +1,58 @@
+<?php
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Initialize the MySQLi connection
+    $con = mysqli_init();
+    
+    if (!$con) {
+        die("mysqli_init failed");
+    }
+    
+    // Configure SSL settings
+    mysqli_ssl_set(
+        $con,
+        NULL,
+        NULL,
+        "/var/www/html/DigiCertGlobalRootG2.crt.pem",
+        NULL,
+        NULL
+    );
+
+    // Configure database connection parameters
+    $host = 'mydemoserver.mysql.database.azure.com';
+    $username = 'myadmin@mydemoserver';
+    $password = 'your_password';
+    $db_name = 'your_database';
+
+    // Establish the connection with SSL
+    mysqli_real_connect($con, $host, $username, $password, $db_name, 3306, NULL, MYSQLI_CLIENT_SSL);
+
+    // If connection failed, show the error
+    if (mysqli_connect_errno()) {
+        die('Failed to connect to MySQL: ' . mysqli_connect_error());
+    }
+
+    // Sanitize user inputs to prevent SQL injection
+    $name = mysqli_real_escape_string($con, $_POST['name']);
+    $email = mysqli_real_escape_string($con, $_POST['email']);
+    $phone = mysqli_real_escape_string($con, $_POST['phone']);
+    $message = mysqli_real_escape_string($con, $_POST['message']);
+
+    // Create the SQL query
+    $sql = "INSERT INTO contact_form_dataTable (fldname, fldEmail, fldPhone, fldMessage) VALUES ('$name', '$email', '$phone', '$message')";
+
+    // Execute the query
+    $rs = mysqli_query($con, $sql);
+
+    if ($rs) {
+        echo "<h2>Thank you for your message, $name!</h2>";
+        echo "<p>Email: $email</p>";
+        echo "<p>Phone: $phone</p>";
+        echo "<p>Message: $message</p>";
+    } else {
+        echo "Error: " . mysqli_error($con);
+    }
+
+    // Close the database connection
+    mysqli_close($con);
+}
+?>

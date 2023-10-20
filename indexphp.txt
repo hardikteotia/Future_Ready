@@ -1,0 +1,72 @@
+<?php
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Initialize the MySQLi connection
+    $con = mysqli_init();
+    
+    if (!$con) {
+        die("mysqli_init failed");
+    }
+    
+    // Configure SSL settings
+    mysqli_ssl_set(
+        $con,
+        NULL,
+        NULL,
+        "/var/www/html/DigiCertGlobalRootG2.crt.pem",
+        NULL,
+        NULL
+    );
+
+    // Configure database connection parameters
+    $host = 'frt-project-server.mysql.database.azure.com';
+    $username = 'adminh123';
+    $password = 'passwordh123@';
+    $db_name = 'frt-project-database';
+
+    // Establish the connection with SSL
+    mysqli_real_connect($con, $host, $username, $password, $db_name, 3306, NULL, MYSQLI_CLIENT_SSL);
+
+    // If connection failed, show the error
+    if (mysqli_connect_errno()) {
+        die('Failed to connect to MySQL: ' . mysqli_connect_error());
+    }
+
+    // Create a table if it doesn't exist
+    if (mysqli_query($con, '
+        CREATE TABLE IF NOT EXISTS contact_form_dataTable (
+        `Id` INT NOT NULL AUTO_INCREMENT ,
+        `fldname` VARCHAR(50) NOT NULL ,
+        `fldEmail` VARCHAR(200) NOT NULL ,
+        `fldPhone` INT(10) NOT NULL ,
+        `fldMessage` VARCHAR(250) NOT NULL ,
+        PRIMARY KEY (`Id`)
+        );
+    ')) {
+        printf("Table created or already exists.\n");
+    } else {
+        echo "Error: " . mysqli_error($con);
+    }
+
+    // Prepare the statement
+    $stmt = mysqli_prepare($con, "INSERT INTO contact_form_dataTable (fldname, fldEmail, fldPhone, fldMessage) VALUES (?, ?, ?, ?)");
+
+    // Bind the parameters
+    mysqli_stmt_bind_param($stmt, "ssis", $_POST['name'], $_POST['email'], $_POST['phone'], $_POST['message']);
+
+    // Execute the query
+    if (mysqli_stmt_execute($stmt)) {
+        echo "<h2>Thank you for your message, {$_POST['name']}!</h2>";
+        echo "<p>Email: {$_POST['email']}</p>";
+        echo "<p>Phone: {$_POST['phone']}</p>";
+        echo "<p>Message: {$_POST['message']}</p>";
+    } else {
+        echo "Error: " . mysqli_error($con);
+    }
+
+    // Close the statement
+    mysqli_stmt_close($stmt);
+
+    // Close the database connection
+    mysqli_close($con);
+}
+?>
